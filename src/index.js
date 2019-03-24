@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import lscache from 'lscache'
 
-import { pipe } from './utils'
-
 /**
  * Wraps useState using localStorage get for initial value population.
  * setState triggers a localStorage set.
@@ -11,20 +9,20 @@ import { pipe } from './utils'
  * @param {number} ttl Optional. localStorage expiration in minutes.
  * @return [state, setState] the same way useState returns.
  */
-export const useStateLS = (key, ttl = null) => {
+export const useCachedState = (key, ttl = null) => {
   const [state, setState] = useState(lscache.get(key))
 
   const setStateLS = (newState) => {
-    setState(newState)
+    let value = newState
     if (typeof newState === 'function') {
-      // pipe the return value of functional argument to lscache
-      pipe(newState, (value) => lscache.set(key, value, ttl))()
-    } else {
-      lscache.set(key, newState, ttl)
+      // get new state value on functional updates
+      value = newState(state)
     }
+    lscache.set(key, value, ttl)
+    return setState(newState)
   }
 
   return [state, setStateLS]
 }
 
-export default { useStateLS }
+export default { useCachedState }
