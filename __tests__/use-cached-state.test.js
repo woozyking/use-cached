@@ -42,19 +42,38 @@ it('should update state and set cache by invoking setState(function)', () => {
   expect(lscache.get(CACHE_KEY)).toBe((value + 1) * 10)
 })
 
-it('should have in-memory state intact, while lscache value as null after its ttl expired', (done) => {
-  lscache.setExpiryMilliseconds(1)
-  const ttl = 50
-  const { result } = renderHook(() => useCachedState(CACHE_KEY, ttl))
-  const value = Math.random()
+describe('should have in-memory state intact, while lscache value as null after its ttl expired', () => {
+  test('using TTL initialized by useCachedState()', (done) => {
+    lscache.setExpiryMilliseconds(1)
+    const ttl = 50
+    const { result } = renderHook(() => useCachedState(CACHE_KEY, ttl))
+    const value = Math.random()
 
-  act(() => result.current[1](() => value))
-  expect(result.current[0]).toBe(value)
-  expect(lscache.get(CACHE_KEY)).toBe(value)
-
-  setTimeout(() => {
+    act(() => result.current[1](() => value))
     expect(result.current[0]).toBe(value)
-    expect(lscache.get(CACHE_KEY)).toBe(null)
-    done()
-  }, ttl)
+    expect(lscache.get(CACHE_KEY)).toBe(value)
+
+    setTimeout(() => {
+      expect(result.current[0]).toBe(value)
+      expect(lscache.get(CACHE_KEY)).toBe(null)
+      done()
+    }, ttl)
+  })
+
+  test('using TTL set by setState()', (done) => {
+    lscache.setExpiryMilliseconds(1)
+    const ttl = 60
+    const { result } = renderHook(() => useCachedState(CACHE_KEY))
+    const value = Math.random()
+
+    act(() => result.current[1](() => value, ttl))
+    expect(result.current[0]).toBe(value)
+    expect(lscache.get(CACHE_KEY)).toBe(value)
+
+    setTimeout(() => {
+      expect(result.current[0]).toBe(value)
+      expect(lscache.get(CACHE_KEY)).toBe(null)
+      done()
+    }, ttl)
+  })
 })
