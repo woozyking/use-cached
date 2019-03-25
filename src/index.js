@@ -8,22 +8,27 @@ import lscache from 'lscache'
  * @param {string} key - Cache key.
  * @param {number} [ttl = null]
  *  [Optional] Cache expiration in minutes.
- * @param {function} [lazy = null]
- *  [Optional] Same as the functional argument passed to useState(fn) for lazy initial state.
- *  It's only effective when there's no cached value by given key.
+ * @param {} [initialState = null]
+ *  [Optional] Same as the initial state (value|function) supplied to useState. Only effective when cached value is null.
  *
  * @return [state, setState]
  */
-export function useCachedState(key, ttl = null, lazy = null) {
+export function useCachedState(key, ttl = null, initialState = null) {
   if (!key || typeof key !== 'string') {
     throw new Error('key must be a non-empty string.')
   }
 
-  let initialState = lscache.get(key)
-  if (!initialState && lazy && typeof lazy === 'function') {
-    initialState = lazy
+  let cachedInit = lscache.get(key)
+  if (!cachedInit) {
+    if (typeof initialState === 'function') {
+      cachedInit = initialState()
+    } else {
+      cachedInit = initialState
+    }
+    lscache.set(key, cachedInit, ttl)
   }
-  const [state, setState] = useState(initialState)
+
+  const [state, setState] = useState(cachedInit)
 
   const setCachedState = (newState, time = ttl) => {
     let value = newState
