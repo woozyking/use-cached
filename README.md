@@ -4,7 +4,7 @@ Custom [React hooks](https://reactjs.org/docs/hooks-custom.html) built on top of
 
 ## Hooks
 
-### `useCachedState(key: string, ttl?: number, lazy?: any)`
+### `useCachedState(key: string, ttl?: number, initialState?: any)`
 
 Cached counterpart of the native [`useState`](https://reactjs.org/docs/hooks-state.html).
 
