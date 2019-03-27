@@ -1,4 +1,4 @@
-image: node:lts
+image: node:stable
 
 cache:
   paths:
