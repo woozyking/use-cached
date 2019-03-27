@@ -10,20 +10,17 @@ Returns a cache-enabled counterpart of the native [`useState`](https://reactjs.o
 
 ```jsx
 import React from 'react'
-import { useCachedState } from 'use-cached'
+import { cachedState, cachedReducer } from 'use-cached'
 
 
 const MyComponent = (props) => {
-  // initialize state with value stored in 'cached_counter' cache key
-  const [counter, setCounter] = useCachedState('cached_counter')(initialState)
+  const useCachedState = cachedState(key, ttl)
+  const [state, setState] = useCached(initialState)
+  // initialState is disregarded if there is cached value under given key
 
-  // initialize state with a 60-minute TTL (time-to-live, or expiration time)
-  const [user, setUser] = useCachedState('cached_user', 60)(initialState)
-
-  // initialize state with a initialState mirroring useState interface
-  // effective only when cached value returns null
-  const [s1, setS1] = useCachedState('cached_1')(5)
-  const [s2, setS2] = useCachedState('cached_2')(() => heavy(...args))
+  const useCachedReducer = cachedReducer(key, ttl)
+  const [state, dispatch] = useCachedReducer(reducer, initialArgs, init)
+  // initialArgs is disregarded if there's cached value under given key
 }
 
 export default MyComponent
