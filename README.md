@@ -4,9 +4,9 @@ Custom [React hooks](https://reactjs.org/docs/hooks-custom.html) built on top of
 
 ## Hooks
 
-### `useCachedState(key: string, ttl?: number, initialState?: any)`
+### `useCachedState(key: string, ttl?: number)`
 
-Cached counterpart of the native [`useState`](https://reactjs.org/docs/hooks-state.html).
+Returns a cache-enabled counterpart of the native [`useState`](https://reactjs.org/docs/hooks-state.html).
 
 ```jsx
 import React from 'react'
@@ -15,15 +15,15 @@ import { useCachedState } from 'use-cached'
 
 const MyComponent = (props) => {
   // initialize state with value stored in 'cached_counter' cache key
-  const [counter, setCounter] = useCachedState('cached_counter')
+  const [counter, setCounter] = useCachedState('cached_counter')(initialState)
 
   // initialize state with a 60-minute TTL (time-to-live, or expiration time)
-  const [user, setUser] = useCachedState('cached_user', 60)
+  const [user, setUser] = useCachedState('cached_user', 60)(initialState)
 
   // initialize state with a initialState mirroring useState interface
   // effective only when cached value returns null
-  const [s1, setS1] = useCachedState('cached_1', null, 5)
-  const [s2, setS2] = useCachedState('cached_2', null, () => heavy(...args))
+  const [s1, setS1] = useCachedState('cached_1')(5)
+  const [s2, setS2] = useCachedState('cached_2')(() => heavy(...args))
 }
 
 export default MyComponent

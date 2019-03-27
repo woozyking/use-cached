@@ -5,9 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `cachedReducer`
+
 ### Changed
-- `lazy` argument changed to `initialState` to mirror `useState` argument of either an initial value state, or a function for lazy initialization.
-- `initialState` value (or evaluated from functional argument) is cached upon initialization, when existing cached value returns null.
+- [*Breaking*] drastically changed interface (higher-order-function now) and implementation (`useEffect` based now).
+- [*Breaking*] `useCachedState` is replaced by `cachedState`
 
 ## [0.1.0] - 2019-03-23
 ### Added
