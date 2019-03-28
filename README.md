@@ -23,5 +23,3 @@ const MyComponent = (props) => {
 
 export default MyComponent
 ```
-
-### `useCachedReducer` - WIP
