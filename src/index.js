@@ -1,62 +1,42 @@
-import { useEffect, useState, useReducer } from 'react'
+import { useEffect } from 'react'
 import lscache from 'lscache'
 
-/**
- * Higher order function that configures and returns a modified version of
- * React.useState function.
- *
- * @param {string} key cache key.
- * @param {number} [ttl = null] cache TTL/expiration. By default in minutes.
- * @returns {function(*): [any, function]} wrapped version of React.useState
- */
-export const cachedState = (key, ttl = null) => (...args) => {
-  if (!key || typeof key !== 'string') {
-    throw new Error('key must be a non-empty string.')
-  }
 
-  if (ttl !== null && isNaN(parseFloat(ttl))) {
-    throw new Error('ttl can only be null or a valid number.')
-  }
-
-  const cachedState = lscache.get(key)
-
-  const [state, action] = cachedState !== null
-    ? useState(cachedState) // cachedState as initialState (value)
-    : useState(...args) // initialState (value | function)
-
-  useEffect(() => {
-    lscache.set(key, state, ttl)
-  }, [state, key, ttl])
-
-  return [state, action]
-}
+const SUPPORTED_HOOKS = ['useState', 'useReducer']
 
 /**
  * Higher order function that configures and returns a modified version of
- * React.useRecuder function.
+ * the given supported hook
  *
  * @param {string} key cache key.
- * @param {number} [ttl = null] cache TTL/expiration. By default in minutes.
- * @returns {function(*): [any, function]} wrapped version of React.useRecuder
+ * @param {number} [ttl = null] Optional cache TTL/expiration. By default in minutes.
+ * @returns {(hook: function) => function} wrapped version of supported React hook
  */
-export const cachedReducer = (key, ttl = null) => (...args) => {
+export function cached(key, ttl = null) {
+  // argument validations
   if (!key || typeof key !== 'string') {
     throw new Error('key must be a non-empty string.')
   }
-
-  if (ttl !== null && isNaN(parseFloat(ttl))) {
-    throw new Error('ttl can only be null or a valid number.')
+  if (ttl !== null && (isNaN(parseFloat(ttl)) || ttl < 0)) {
+    throw new Error('ttl can only be null or a positive number.')
   }
-
-  const cachedState = lscache.get(key)
-
-  const [state, action] = cachedState !== null
-    ? useReducer(args[0], cachedState, args[2]) // reducer, cachedState as initialArg, init
-    : useReducer(...args) // reducer, initialArg, init
-
-  useEffect(() => {
-    lscache.set(key, state, ttl)
-  }, [state, key, ttl])
-
-  return [state, action]
+  return (hook) => (...args) => {
+    // hook support check
+    if (!hook || typeof hook !== 'function' || !SUPPORTED_HOOKS.includes(hook.name)) {
+      throw new Error(`only ${SUPPORTED_HOOKS.join(' | ')} can be cached.`)
+    }
+    // pull cached state
+    const cachedState = lscache.get(key)
+    // invoke hook depending on cached state availability
+    const [state, method] = cachedState === null ? hook(...args) : hook(...{
+      useState: [cachedState],
+      useReducer: [args[0], cachedState],
+    }[hook.name])
+    // internal effect to update cache
+    useEffect(() => {
+      lscache.set(key, state, ttl)
+    }, [state, key, ttl])
+    // return [state, method] pair exactly like supported hooks
+    return [state, method]
+  }
 }

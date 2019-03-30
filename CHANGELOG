@@ -5,12 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Added
-- `cachedReducer`
-
 ### Changed
-- [*Breaking*] drastically changed interface (higher-order-function now) and implementation (`useEffect` based now).
-- [*Breaking*] `useCachedState` is replaced by `cachedState`
+- `useEffect` based cache update mechanism.
+- [*Breaking*] drastically changed interface (as one higher-order-function, `cached`)
+- [*Breaking*] `useCachedState` is replaced by `cached` higher-order-function.
+
+### Added
+- `useReducer` support for revised higher-order-function `cached`.
 
 ## [0.1.0] - 2019-03-23
 ### Added

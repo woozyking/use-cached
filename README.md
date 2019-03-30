@@ -1,25 +1,71 @@
 # use-cached
 
-Custom [React hooks](https://reactjs.org/docs/hooks-custom.html) built on top of [lscache](https://github.com/pamelafox/lscache) to provide seamless caching integration.
+Higher-order-function that bakes state caching mechanism into supported React hooks. Built on top of [lscache](https://github.com/pamelafox/lscache) to provide seamless caching integration with TTL/expiration support.
 
-## Hooks
+## Supported Hooks
+
+### Cached `useState`
 
 ```jsx
 import React from 'react'
-import { cachedState, cachedReducer } from 'use-cached'
+import { cached } from 'use-cached'
 
+// get cached version of useState
+const useState = cached('TEST_CACHE_KEY', 60)(React.useState) // key, ttl
 
-const MyComponent = (props) => {
-  // get a cached version of useState
-  const useCachedState = cachedState(key, ttl)
-  // initialState is disregarded if there is cached value under given key
-  const [state, setState] = useCached(initialState)
+function Counter({initialCount}) {
+  // count here would be from cache if it exists as a non-null value
+  const [count, setCount] = useState(initialCount)
+  return (
+    <>
+      Count: {count}
+      <button onClick={() => setCount(initialCount)}>Reset</button>
+      <button onClick={() => setCount(prevCount => prevCount + 1)}>+</button>
+      <button onClick={() => setCount(prevCount => prevCount - 1)}>-</button>
+    </>
+  )
+}
+```
 
-  // get a cached version of useReducer
-  const useCachedReducer = cachedReducer(key, ttl)
-  // initialArgs is disregarded if there's cached value under given key
-  const [state, dispatch] = useCachedReducer(reducer, initialArgs, init)
+### Cached `useReducer`
+
+```jsx
+import React from 'react'
+import { cached } from 'use-cached'
+
+// get cached version of useReducer
+const useReducer = cached('TEST_CACHE_KEY', 60)(React.useReducer) // key, ttl
+
+function init(initialCount) {
+  return {count: initialCount}
 }
 
-export default MyComponent
+function reducer(state, action) {
+  switch (action.type) {
+    case 'increment':
+      return {count: state.count + 1}
+    case 'decrement':
+      return {count: state.count - 1}
+    case 'reset':
+      return init(action.payload)
+    default:
+      throw new Error()
+  }
+}
+
+function Counter({initialCount}) {
+  // state here would be from cache if it exists as a non-null value
+  const [state, dispatch] = useReducer(reducer, initialCount, init)
+  return (
+    <>
+      Count: {state.count}
+      <button
+        onClick={() => dispatch({type: 'reset', payload: initialCount})}>
+        Reset
+      </button>
+      <button onClick={() => dispatch({type: 'increment'})}>+</button>
+      <button onClick={() => dispatch({type: 'decrement'})}>-</button>
+    </>
+  )
+}
 ```

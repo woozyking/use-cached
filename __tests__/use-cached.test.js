@@ -1,7 +1,8 @@
 import { renderHook, cleanup, act } from 'react-hooks-testing-library'
+import React, { useState, useReducer, useEffect } from 'react'
 import lscache from 'lscache'
 
-import { cachedState, cachedReducer } from '../src'
+import { cached } from '../src'
 
 const CACHE_KEY = 'test_key_' + Math.random()
 
@@ -11,102 +12,127 @@ afterEach(() => {
   return cleanup()
 })
 
-describe('invalid key throws an error', () => {
-  test.each([
-    cachedState,
-    cachedReducer,
-  ].map(fn => ([
-    '',
-    null,
-    undefined,
-    123,
-    () => {},
-    true,
-    Symbol(CACHE_KEY),
-  ].map(key => ([fn, key])))).flat())('fn = %p, key = %p', (fn, key) => {
-    expect(() => { fn(key)() }).toThrow()
+function init(initialCount) {
+  return { count: initialCount }
+}
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'increment':
+      return { count: state.count + 1 }
+    case 'decrement':
+      return { count: state.count - 1 }
+    case 'reset':
+      return init(action.payload)
+    default:
+      throw new Error()
+  }
+}
+
+describe('argument validations', () => {
+  const keys = ['', null, undefined, 123, () => {}, true, Symbol(CACHE_KEY)]
+  test.each(keys)('key: %p', (key) => {
+    expect(() => { cached(key)(useState)() }).toThrow()
+  })
+
+  const ttls = ['', undefined, -123, () => {}, true, Symbol(CACHE_KEY)]
+  test.each(ttls)('ttl: %p', (ttl) => {
+    expect(() => { cached(CACHE_KEY, ttl)(useState)() }).toThrow()
+  })
+
+  const fns = ['', null, undefined, 123, () => {}, true, Symbol(CACHE_KEY), useEffect]
+  test.each(fns)('fn: %p', (fn) => {
+    expect(() => { cached(CACHE_KEY)(fn)() }).toThrow()
   })
 })
 
-describe('cachedState', () => {
-  describe('returned hook should return [state, setState]', () => {
-    const value = Math.random()
-    test.each([
-      [CACHE_KEY, null, null, null],
-      [CACHE_KEY, 50, null, null],
-      [CACHE_KEY, null, value, value],
-      [CACHE_KEY, 50, value, value],
-      [CACHE_KEY, 50, () => value, value],
-    ])('cachedState(%p, %p)(%p)', (key, ttl, initialState, expected) => {
-      const { result } = renderHook(() => cachedState(key, ttl)(initialState))
-      expect(result.current[0]).toBe(expected)
-      expect(typeof result.current[1]).toBe('function')
-    })
+describe('returned hook should return [state, method]', () => {
+  const value = Math.random()
+  const ttls = [Math.ceil(value * 10), null]
+  const hooks = Object.entries({
+    useState: {
+      args: [[value], [() => value]],
+      matcher: 'toBe',
+      expected: value,
+    },
+    useReducer: {
+      args: [[reducer, init(value)], [reducer, value, init]],
+      matcher: 'toEqual',
+      expected: init(value),
+    },
   })
-
-  describe('setState should update state and set cache', () => {
-    const value = Math.random()
-
-    test.each([
-      [null, value, value],
-      [1, (prev) => prev + 1, 2],
-    ])('initialState = %p, setState(%p)', (initialState, update, expected) => {
-      const { result } = renderHook(() => cachedState(CACHE_KEY)(initialState))
-      act(() => result.current[1](update))
-      expect(result.current[0]).toBe(expected)
-      expect(lscache.get(CACHE_KEY)).toBe(expected)
-    })
+  test.each(
+    ttls.map(ttl =>
+      hooks.map(([hook, { args, matcher, expected }]) =>
+        args.map(a => [ttl, React[hook], a, matcher, expected])
+      )
+    ).flat(2)
+  )('cached(CACHE_KEY, %p)(%p)(...%p)', (ttl, hook, args, matcher, expected) => {
+    const { result } = renderHook(() => cached(CACHE_KEY, ttl)(hook)(...args))
+    expect(result.current[0])[matcher](expected)
+    expect(typeof result.current[1]).toBe('function')
   })
+})
 
-  test('null cached value after expiration', (done) => {
+describe('non-null cached value, initialState|initialArgs,init is disregarded', () => {
+  const value = Math.random()
+  const hooks = Object.entries({
+    useState: {
+      args: [[value + 1], [() => value + 1]],
+      matcher: 'toBe',
+      expected: value,
+    },
+    useReducer: {
+      args: [[reducer, { count: value + 1 }], [reducer, value + 1, init]],
+      matcher: 'toEqual',
+      expected: { count: value },
+    },
+  })
+  test.each(
+    hooks.map(([hook, { args, matcher, expected }]) =>
+      args.map(a => [React[hook], a, matcher, expected])
+    ).flat()
+  )('cached(CACHE_KEY)(%p)(...%p)', (hook, args, expected) => {
+    lscache.set(CACHE_KEY, expected)
+    const { result } = renderHook(() => cached(CACHE_KEY)(hook)(...args))
+    expect(result.current[0]).toEqual(expected)
+  })
+})
+
+describe('setState|dispatch should update state and cache', () => {
+  const value = Math.random()
+  // TODO: more cases
+  test.each([
+    [useState, [value], [value + 1], value + 1, 'toBe'],
+    [useState, [() => value], [(prev) => prev - 1], value - 1, 'toBe'],
+    [useReducer, [reducer, init(value)], [{ type: 'decrement' }], { count: value - 1 }, 'toEqual'],
+  ])('%p(...%p), update(...%p), %p', (hook, i, u, e, matcher) => {
+    const { result } = renderHook(() => cached(CACHE_KEY)(hook)(...i))
+    act(() => result.current[1](...u))
+    expect(result.current[0])[matcher](e)
+    expect(lscache.get(CACHE_KEY))[matcher](e)
+  })
+})
+
+describe('null cached value after TTL expiration', () => {
+  const value = Math.random()
+  test.each([
+    [useState, [value], value, 'toBe'],
+    [useState, [() => value], value, 'toBe'],
+    [useReducer, [reducer, init(value)], init(value), 'toEqual'],
+    [useReducer, [reducer, value, init], init(value), 'toEqual'],
+  ])('cached(CACHE_KEY, 50ms)(%p)(...%p)', (hook, args, expected, matcher, done) => {
     lscache.setExpiryMilliseconds(1)
     const ttl = 50
-    const { result } = renderHook(() => cachedState(CACHE_KEY, ttl)())
-    const value = Math.random()
+    const { result } = renderHook(() => cached(CACHE_KEY, ttl)(hook)(...args))
 
-    act(() => result.current[1](() => value))
-    expect(result.current[0]).toBe(value)
-    expect(lscache.get(CACHE_KEY)).toBe(value)
+    expect(result.current[0])[matcher](expected)
+    expect(lscache.get(CACHE_KEY))[matcher](expected)
 
     setTimeout(() => {
-      expect(result.current[0]).toBe(value)
+      expect(result.current[0])[matcher](expected)
       expect(lscache.get(CACHE_KEY)).toBe(null)
       done()
     }, ttl)
   })
-
-  describe('initialState', () => {
-    test('null cache, value initialState', () => {
-      const value = Math.random()
-      const { result } = renderHook(() => cachedState(CACHE_KEY)(value))
-      expect(result.current[0]).toBe(value)
-    })
-
-    test('null cache, functional initialState', () => {
-      const value = Math.random()
-      const initialState = () => value
-      const { result } = renderHook(() => cachedState(CACHE_KEY)(initialState))
-      expect(result.current[0]).toBe(value)
-    })
-
-    test('non-null cache, value initialState disregarded', () => {
-      const value = Math.random()
-      const initialState = value + 1
-      lscache.set(CACHE_KEY, value)
-      const { result } = renderHook(() => cachedState(CACHE_KEY)(initialState))
-      expect(result.current[0]).toBe(value)
-    })
-
-    test('non-null cache, functional initialState disregarded', () => {
-      const value = Math.random()
-      const initialState = () => value + 1
-      lscache.set(CACHE_KEY, value)
-      const { result } = renderHook(() => cachedState(CACHE_KEY)(initialState))
-      expect(result.current[0]).toBe(value)
-    })
-  })
-})
-
-describe('cachedReducer', () => {
-
 })
