@@ -7,8 +7,11 @@ const SUPPORTED_HOOKS = ['useState', 'useReducer']
  * Higher order function that configures and returns a modified version of
  * the given supported hook
  *
+ * @function cached
+ *
  * @param {string} key cache key.
  * @param {number} [ttl = null] Optional cache TTL/expiration. By default in minutes.
+ *
  * @returns {(hook: function) => function} wrapped version of supported React hook
  */
 export function cached(key, ttl = null) {
@@ -39,3 +42,5 @@ export function cached(key, ttl = null) {
     return [state, method]
   }
 }
+
+export default cached
