@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import lscache from 'lscache'
 
-
 const SUPPORTED_HOOKS = ['useState', 'useReducer']
 
 /**
