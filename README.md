@@ -2,12 +2,21 @@
 
 [![pipeline status](https://gitlab.com/woozyking/use-cached/badges/master/pipeline.svg)](https://gitlab.com/woozyking/use-cached/commits/master)
 [![coverage report](https://gitlab.com/woozyking/use-cached/badges/master/coverage.svg)](https://gitlab.com/woozyking/use-cached/commits/master)
+[![npm version](https://badge.fury.io/js/use-cached.svg)](https://www.npmjs.com/package/use-cached)
 
 Higher-order-function that bakes state caching mechanism into supported React hooks.
 
 Built on top of [lscache](https://github.com/pamelafox/lscache) to provide seamless caching integration with TTL/expiration support.
 
-## Supported Hooks
+## Install
+
+```shell
+yarn add use-cached
+# OR
+npm install use-cached
+```
+
+## Usage
 
 ### Cached `useState`
 
