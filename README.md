@@ -1,6 +1,11 @@
 # use-cached
 
-Higher-order-function that bakes state caching mechanism into supported React hooks. Built on top of [lscache](https://github.com/pamelafox/lscache) to provide seamless caching integration with TTL/expiration support.
+[![pipeline status](https://gitlab.com/woozyking/use-cached/badges/master/pipeline.svg)](https://gitlab.com/woozyking/use-cached/commits/master)
+[![coverage report](https://gitlab.com/woozyking/use-cached/badges/master/coverage.svg)](https://gitlab.com/woozyking/use-cached/commits/master)
+
+Higher-order-function that bakes state caching mechanism into supported React hooks.
+
+Built on top of [lscache](https://github.com/pamelafox/lscache) to provide seamless caching integration with TTL/expiration support.
 
 ## Supported Hooks
 

@@ -15,5 +15,5 @@ test:
     - yarn install
   script:
     - yarn lint
-    - yarn test
+    - yarn test --coverage
     - yarn build
