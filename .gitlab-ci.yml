@@ -7,6 +7,7 @@ cache:
 
 stages:
   - test
+  - deploy-storybook
 
 test:
   stage: test
@@ -17,3 +18,14 @@ test:
     - yarn lint
     - yarn test --coverage
     - yarn build
+
+deploy-storybook:
+  stage: deploy-storybook
+  only:
+    - master
+  before_script:
+    - yarn config set cache-folder .yarn-cache
+    - yarn install
+  script:
+    - git remote add gh-pages git@github.com:woozyking/use-cached.git
+    - yarn deploy-storybook --ci --remote gh-pages --branch gh-pages 1> /dev/null

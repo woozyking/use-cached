@@ -18,6 +18,14 @@ npm install use-cached
 
 ## Usage
 
+```js
+import { cached } from 'use-cached'
+// or
+import anyName from 'use-cached'
+```
+
+The only interface (the higher-order-function) is exported as the module's named function (`{ cached }`), and its `default`.
+
 ### Cached `useState`
 
 ```jsx
@@ -45,10 +53,10 @@ function Counter({initialCount}) {
 
 ```jsx
 import React from 'react'
-import { cached } from 'use-cached'
+import useCached from 'use-cached' // same as import { cached }
 
 // get cached version of useReducer
-const useReducer = cached('TEST_CACHE_KEY', 60)(React.useReducer) // key, ttl
+const useReducer = useCached('TEST_CACHE_KEY', 60)(React.useReducer) // key, ttl
 
 function init(initialCount) {
   return {count: initialCount}
