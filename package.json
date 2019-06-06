@@ -4,7 +4,10 @@
   "author": "woozyking <runzhou.li@gmail.com>",
   "license": "MIT",
   "description": "React cached hooks.",
-  "repository": "git@github.com:woozyking/use-cached.git",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/woozyking/use-cached.git"
+  },
   "private": false,
   "main": "dist/index.js",
   "source": "src/index.js",
@@ -51,5 +54,15 @@
   },
   "peerDependencies": {
     "react": "^16.8"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/woozyking/use-cached/issues"
+  },
+  "homepage": "https://github.com/woozyking/use-cached#readme",
+  "keywords": [
+    "react",
+    "hook",
+    "cache",
+    "localstorage"
+  ]
 }

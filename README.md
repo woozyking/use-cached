@@ -24,7 +24,7 @@ import { cached } from 'use-cached'
 import anyName from 'use-cached'
 ```
 
-The only interface (the higher-order-function) is exported as the module's named function (`{ cached }`), and its `default`.
+The only interface (the higher-order-function) is exported as the module's named function (`{ cached }`), and its `default`. Check out the [Storybook](https://woozyking.github.io/use-cached), or examples below.
 
 ### Cached `useState`
 
