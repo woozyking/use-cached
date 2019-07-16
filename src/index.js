@@ -38,8 +38,8 @@ export function cached(key, ttl = null) {
     useEffect(() => {
       lscache.set(key, state, ttl)
     }, [state, key, ttl])
-    // return [state, method] pair exactly like supported hooks
-    return [state, method]
+    // return [state, method()[, remove()]]
+    return [state, method, () => lscache.remove(key)]
   }
 }
 

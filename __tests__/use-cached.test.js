@@ -46,7 +46,7 @@ describe('argument validations', () => {
   })
 })
 
-describe('returned hook should return [state, method]', () => {
+describe('returned hook should return [state, method, remove]', () => {
   const value = Math.random()
   const ttls = [Math.ceil(value * 10), null]
   const hooks = Object.entries({
@@ -71,6 +71,7 @@ describe('returned hook should return [state, method]', () => {
     const { result } = renderHook(() => cached(CACHE_KEY, ttl)(hook)(...args))
     expect(result.current[0])[matcher](expected)
     expect(typeof result.current[1]).toBe('function')
+    expect(typeof result.current[2]).toBe('function')
   })
 })
 
@@ -134,5 +135,22 @@ describe('null cached value after TTL expiration', () => {
       expect(lscache.get(CACHE_KEY)).toBe(null)
       done()
     }, ttl)
+  })
+})
+
+describe('programmatic cache removal should not impact current state, but only cache', () => {
+  const value = Math.random()
+  test.each([
+    [useState, [value], [value + 1], value + 1, 'toBe'],
+    [useState, [() => value], [(prev) => prev - 1], value - 1, 'toBe'],
+    [useReducer, [reducer, init(value)], [{ type: 'decrement' }], { count: value - 1 }, 'toEqual'],
+  ])('%p(...%p), update(...%p), %p', (hook, i, u, e, matcher) => {
+    const { result } = renderHook(() => cached(CACHE_KEY)(hook)(...i))
+    act(() => result.current[1](...u))
+    expect(result.current[0])[matcher](e)
+    expect(lscache.get(CACHE_KEY))[matcher](e)
+    act(() => result.current[2]())
+    expect(result.current[0])[matcher](e)
+    expect(lscache.get(CACHE_KEY))[matcher](null)
   })
 })

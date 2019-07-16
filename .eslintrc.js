@@ -25,6 +25,11 @@ module.exports = {
     'react',
     'jest'
   ],
+  'settings': {
+    'react': {
+      'version': 'detect'
+    }
+  },
   'rules': {
     'comma-dangle': ['error', 'always-multiline'],
     'space-before-function-paren': [

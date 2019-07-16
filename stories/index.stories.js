@@ -4,16 +4,17 @@ import { storiesOf } from '@storybook/react'
 
 import cached from '../src'
 
+const init = () => Math.floor(Math.random() * 10)
+
 storiesOf('cached', module)
   .add('with useState', () => {
     const StateCounter = () => {
-      const initialCount = Math.floor(Math.random() * 10)
       // count here would be from cache if it exists as a non-null value
-      const [count, setCount] = cached('USE_CACHED_USE_STATE_STORY', 60)(useState)(initialCount)
+      const [count, setCount] = cached('USE_CACHED_USE_STATE_STORY', 60)(useState)(init())
       return (
         <>
           Count: {count}
-          <button onClick={() => setCount(initialCount)}>Randomize</button>
+          <button onClick={() => setCount(init())}>Randomize</button>
           <button onClick={() => setCount(prevCount => prevCount + 1)}>+</button>
           <button onClick={() => setCount(prevCount => prevCount - 1)}>-</button>
         </>
@@ -58,3 +59,20 @@ storiesOf('cached', module)
     }
     return (<ReducerCounter />)
   }, { options: { showPanel: true, panelPosition: 'bottom' } })
+  .add('programmtic cache removal', () => {
+    const StateCounter = () => {
+      const init = () => Math.floor(Math.random() * 10)
+      // count here would be from cache if it exists as a non-null value
+      const [count, setCount, remove] = cached('USE_CACHED_USE_STATE_REMOVE_STORY', 60)(useState)(init())
+      return (
+        <>
+          Count: {count}
+          <button onClick={() => setCount(init())}>Randomize</button>
+          <button onClick={() => setCount(prevCount => prevCount + 1)}>+</button>
+          <button onClick={() => setCount(prevCount => prevCount - 1)}>-</button>
+          <button onClick={() => remove()}>Cache Removal (current state intact until refresh)</button>
+        </>
+      )
+    }
+    return (<StateCounter />)
+  })
