@@ -1,6 +1,6 @@
 {
   "name": "use-cached",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "author": "woozyking <runzhou.li@gmail.com>",
   "license": "MIT",
   "description": "React cached hooks.",
