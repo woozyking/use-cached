@@ -2,8 +2,8 @@ name: Node.js Package (alpha)
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*-alpha'
 
 jobs:
   publish-npm:
