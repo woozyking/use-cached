@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2019-09-18
+### Security
+- Routine `devDependencies` upgrade.
+
 ## [1.1.0] - 2019-07-15
 ### Added
 - `cached(hook)` return list third item - `remove` function for programmatic cache removal, while keeping current in-memory state intact.
