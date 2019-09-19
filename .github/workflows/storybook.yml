@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  publish-npm:
+  deploy-storybook:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -16,3 +16,5 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: yarn install
       - run: yarn deploy-storybook --ci
+        env:
+           GH_TOKEN: ${{secrets.GH_TOKEN}}
