@@ -134,7 +134,7 @@ describe('null cached value after TTL expiration', () => {
       expect(result.current[0])[matcher](expected)
       expect(lscache.get(CACHE_KEY)).toBe(null)
       done()
-    }, ttl)
+    }, ttl * 2)
   })
 })
 
