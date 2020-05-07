@@ -10,11 +10,21 @@ const SUPPORTED_HOOKS = ['useState', 'useReducer']
  * @function cached
  *
  * @param {string} key cache key.
- * @param {number} [ttl = null] Optional cache TTL/expiration. By default in minutes.
+ * @param {number} [ttl = null] Optional cache TTL/expiration. Default: no TTL
+ * @param {number} [ttlMS = null] Optional cache TTL unit in milliseconds. Default: 60000
  *
  * @returns {(hook: function) => function} wrapped version of supported React hook
  */
-export function cached(key, ttl = null) {
+export function cached(...params) {
+  let key, ttl, ttlMS
+  if (typeof params[0] === 'object' && params[0] !== null) {
+    ({ key, ttl = null, ttlMS = null } = params[0])
+  } else { // DEPRECATING in v2.0
+    [key, ttl = null, ttlMS = null] = params
+  }
+  if (!isNaN(parseInt(ttlMS)) && ttlMS > 0) {
+    lscache.setExpiryMilliseconds(ttlMS)
+  }
   // argument validations
   if (!key || typeof key !== 'string') {
     throw new Error('key must be a non-empty string.')
