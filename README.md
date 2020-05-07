@@ -1,7 +1,5 @@
 # use-cached
 
-[![pipeline status](https://gitlab.com/woozyking/use-cached/badges/master/pipeline.svg)](https://gitlab.com/woozyking/use-cached/commits/master)
-[![coverage report](https://gitlab.com/woozyking/use-cached/badges/master/coverage.svg)](https://gitlab.com/woozyking/use-cached/commits/master)
 [![npm version](https://badge.fury.io/js/use-cached.svg)](https://www.npmjs.com/package/use-cached)
 
 Higher-order-function that bakes state caching mechanism into supported React hooks.
@@ -20,8 +18,8 @@ npm install use-cached
 
 ```js
 import { cached } from 'use-cached'
-// or
-import anyName from 'use-cached'
+// or import its default, which is the same function
+import cached from 'use-cached'
 ```
 
 The only interface (the higher-order-function) is exported as the module's named function (`{ cached }`), and its `default`. Check out the [Storybook](https://woozyking.github.io/use-cached), or examples below.
@@ -33,7 +31,13 @@ import React from 'react'
 import { cached } from 'use-cached'
 
 // get cached version of useState
-const useState = cached('TEST_CACHE_KEY', 60)(React.useState) // key, ttl
+const useState = cached({
+  // Object config, added in v1.2.0
+  key: 'TEST_CACHE_KEY',
+  ttl: 60,
+  ttlMS: 60000, // added in v1.2.0
+  // effective TTL in this case is 60 * 60000ms = 60 minutes
+})(React.useState)
 
 function Counter({initialCount}) {
   // count here would be from cache if it exists as a non-null value
@@ -53,10 +57,15 @@ function Counter({initialCount}) {
 
 ```jsx
 import React from 'react'
-import useCached from 'use-cached' // same as import { cached }
+import cached from 'use-cached' // same as import { cached }
 
 // get cached version of useReducer
-const useReducer = useCached('TEST_CACHE_KEY', 60)(React.useReducer) // key, ttl
+const useReducer = cached(
+  // positional config, deprecating in v2.0
+  'TEST_CACHE_KEY', // key
+  60, // ttl
+  60000, // ttlMS
+)(React.useReducer)
 
 function init(initialCount) {
   return {count: initialCount}

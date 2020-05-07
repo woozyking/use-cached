@@ -10,7 +10,10 @@ storiesOf('cached', module)
   .add('with useState', () => {
     const StateCounter = () => {
       // count here would be from cache if it exists as a non-null value
-      const [count, setCount] = cached('USE_CACHED_USE_STATE_STORY', 60)(useState)(init())
+      const [count, setCount] = cached({
+        key: 'USE_CACHED_USE_STATE_STORY',
+        ttl: 60,
+      })(useState)(init())
       return (
         <>
           Count: {count}
@@ -44,7 +47,10 @@ storiesOf('cached', module)
       }
 
       // state here would be from cache if it exists as a non-null value
-      const [state, dispatch] = cached('USE_CACHED_USE_REDUCER_STORY', 60)(useReducer)(reducer, initialCount, init)
+      const [state, dispatch] = cached({
+        key: 'USE_CACHED_USE_REDUCER_STORY',
+        ttl: 60,
+      })(useReducer)(reducer, initialCount, init)
       return (
         <>
           Count: {state.count}
@@ -63,7 +69,10 @@ storiesOf('cached', module)
     const StateCounter = () => {
       const init = () => Math.floor(Math.random() * 10)
       // count here would be from cache if it exists as a non-null value
-      const [count, setCount, remove] = cached('USE_CACHED_USE_STATE_REMOVE_STORY', 60)(useState)(init())
+      const [count, setCount, remove] = cached({
+        key: 'USE_CACHED_USE_STATE_REMOVE_STORY',
+        ttl: 60,
+      })(useState)(init())
       return (
         <>
           Count: {count}
