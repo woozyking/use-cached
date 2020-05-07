@@ -1,4 +1,4 @@
-import { renderHook, cleanup, act } from 'react-hooks-testing-library'
+import { renderHook, cleanup, act } from '@testing-library/react-hooks'
 import React, { useState, useReducer, useEffect } from 'react'
 import lscache from 'lscache'
 
@@ -35,7 +35,7 @@ describe('argument validations', () => {
     keys.map(key => [
       [{ key }],
       [key],
-    ]).flat()
+    ]).flat(),
   )('key: %p', (opts) => {
     expect(() => { cached(...opts)(useState)() }).toThrow()
   })
@@ -45,7 +45,7 @@ describe('argument validations', () => {
     ttls.map(ttl => [
       [{ key: CACHE_KEY, ttl }],
       [CACHE_KEY, ttl],
-    ]).flat()
+    ]).flat(),
   )('ttl: %p', (opts) => {
     expect(() => { cached(...opts)(useState)() }).toThrow()
   })
@@ -55,7 +55,7 @@ describe('argument validations', () => {
     fns.map(fn => [
       [CACHE_KEY],
       [{ key: CACHE_KEY }],
-    ].map(opts => [fn, opts])).flat()
+    ].map(opts => [fn, opts])).flat(),
   )('fn: %p', (fn, opts) => {
     expect(() => { cached(...opts)(fn)() }).toThrow()
   })
@@ -82,9 +82,9 @@ describe('returned hook should return [state, method, remove]', () => {
         args.map(a => [
           [[CACHE_KEY, ttl], React[hook], a, matcher, expected],
           [[{ key: CACHE_KEY, ttl }], React[hook], a, matcher, expected],
-        ])
-      )
-    ).flat(3)
+        ]),
+      ),
+    ).flat(3),
   )('cached(CACHE_KEY, %p)(%p)(...%p)', (opt, hook, args, matcher, expected) => {
     const { result } = renderHook(() => cached(...opt)(hook)(...args))
     expect(result.current[0])[matcher](expected)
@@ -112,8 +112,8 @@ describe('non-null cached value, initialState|initialArgs, init is disregarded',
       args.map(a => [
         [[CACHE_KEY], React[hook], a, matcher, expected],
         [[{ key: CACHE_KEY }], React[hook], a, matcher, expected],
-      ])
-    ).flat(2)
+      ]),
+    ).flat(2),
   )('cached(CACHE_KEY)(%p)(...%p)', (opts, hook, args, expected) => {
     lscache.set(CACHE_KEY, expected)
     const { result } = renderHook(() => cached(...opts)(hook)(...args))
