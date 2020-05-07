@@ -2,7 +2,7 @@ import { renderHook, cleanup, act } from '@testing-library/react-hooks'
 import React, { useState, useReducer, useEffect } from 'react'
 import lscache from 'lscache'
 
-import { cached } from '../src'
+import useCached, { cached } from '../src'
 
 const CACHE_KEY = 'test_key_' + Math.random()
 
@@ -35,9 +35,12 @@ describe('argument validations', () => {
     keys.map(key => [
       [{ key }],
       [key],
+    ]).flat().map(opts => [
+      [cached, opts],
+      [useCached, opts],
     ]).flat(),
-  )('key: %p', (opts) => {
-    expect(() => { cached(...opts)(useState)() }).toThrow()
+  )('%p(%p)', (hof, opts) => {
+    expect(() => { hof(...opts)(useState)() }).toThrow()
   })
 
   const ttls = ['', undefined, -123, () => {}, true, Symbol(CACHE_KEY)]
@@ -45,9 +48,12 @@ describe('argument validations', () => {
     ttls.map(ttl => [
       [{ key: CACHE_KEY, ttl }],
       [CACHE_KEY, ttl],
+    ]).flat().map(opts => [
+      [cached, opts],
+      [useCached, opts],
     ]).flat(),
-  )('ttl: %p', (opts) => {
-    expect(() => { cached(...opts)(useState)() }).toThrow()
+  )('ttl: %p', (hof, opts) => {
+    expect(() => { hof(...opts)(useState)() }).toThrow()
   })
 
   const fns = ['', null, undefined, 123, () => {}, true, Symbol(CACHE_KEY), useEffect]
@@ -55,9 +61,12 @@ describe('argument validations', () => {
     fns.map(fn => [
       [CACHE_KEY],
       [{ key: CACHE_KEY }],
-    ].map(opts => [fn, opts])).flat(),
-  )('fn: %p', (fn, opts) => {
-    expect(() => { cached(...opts)(fn)() }).toThrow()
+    ].map(opts => [fn, opts])).flat().map(opts => [
+      [cached, ...opts],
+      [useCached, ...opts],
+    ]).flat(),
+  )('fn: %p', (hof, fn, opts) => {
+    expect(() => { hof(...opts)(fn)() }).toThrow()
   })
 })
 
@@ -84,9 +93,12 @@ describe('returned hook should return [state, method, remove]', () => {
           [[{ key: CACHE_KEY, ttl }], React[hook], a, matcher, expected],
         ]),
       ),
-    ).flat(3),
-  )('cached(CACHE_KEY, %p)(%p)(...%p)', (opt, hook, args, matcher, expected) => {
-    const { result } = renderHook(() => cached(...opt)(hook)(...args))
+    ).flat(3).map(opts => [
+      [cached, ...opts],
+      [useCached, ...opts],
+    ]).flat(),
+  )('cached(CACHE_KEY, %p)(%p)(...%p)', (hof, opt, hook, args, matcher, expected) => {
+    const { result } = renderHook(() => hof(...opt)(hook)(...args))
     expect(result.current[0])[matcher](expected)
     expect(typeof result.current[1]).toBe('function')
     expect(typeof result.current[2]).toBe('function')
@@ -113,10 +125,13 @@ describe('non-null cached value, initialState|initialArgs, init is disregarded',
         [[CACHE_KEY], React[hook], a, matcher, expected],
         [[{ key: CACHE_KEY }], React[hook], a, matcher, expected],
       ]),
-    ).flat(2),
-  )('cached(CACHE_KEY)(%p)(...%p)', (opts, hook, args, expected) => {
+    ).flat(2).map(opts => [
+      [cached, ...opts],
+      [useCached, ...opts],
+    ]).flat(),
+  )('cached(CACHE_KEY)(%p)(...%p)', (hof, opts, hook, args, expected) => {
     lscache.set(CACHE_KEY, expected)
-    const { result } = renderHook(() => cached(...opts)(hook)(...args))
+    const { result } = renderHook(() => hof(...opts)(hook)(...args))
     expect(result.current[0]).toEqual(expected)
   })
 })
@@ -131,8 +146,11 @@ describe('setState|dispatch should update state and cache', () => {
   ].map(params => [
     [[{ key: CACHE_KEY }], ...params],
     [[CACHE_KEY], ...params],
-  ]).flat())('%p(...%p), update(...%p), %p', (opts, hook, i, u, e, matcher) => {
-    const { result } = renderHook(() => cached(...opts)(hook)(...i))
+  ]).flat().map(opts => [
+    [cached, ...opts],
+    [useCached, ...opts],
+  ]).flat())('%p(...%p), update(...%p), %p', (hof, opts, hook, i, u, e, matcher) => {
+    const { result } = renderHook(() => hof(...opts)(hook)(...i))
     act(() => result.current[1](...u))
     expect(result.current[0])[matcher](e)
     expect(lscache.get(CACHE_KEY))[matcher](e)
@@ -150,8 +168,11 @@ describe('null cached value after TTL expiration', () => {
   ].map(params => [
     [[{ key: CACHE_KEY, ttl, ttlMS: 1 }], ...params],
     [[CACHE_KEY, ttl, 1], ...params],
-  ]).flat())('cached(CACHE_KEY, 50ms)(%p)(...%p)', (opts, hook, args, expected, matcher, done) => {
-    const { result } = renderHook(() => cached(...opts)(hook)(...args))
+  ]).flat().map(opts => [
+    [cached, ...opts],
+    [useCached, ...opts],
+  ]).flat())('cached(CACHE_KEY, 50ms)(%p)(...%p)', (hof, opts, hook, args, expected, matcher, done) => {
+    const { result } = renderHook(() => hof(...opts)(hook)(...args))
 
     expect(result.current[0])[matcher](expected)
     expect(lscache.get(CACHE_KEY))[matcher](expected)
@@ -160,7 +181,7 @@ describe('null cached value after TTL expiration', () => {
       expect(result.current[0])[matcher](expected)
       expect(lscache.get(CACHE_KEY)).toBe(null)
       done()
-    }, ttl * 2)
+    }, ttl * 1.2)
   })
 })
 
@@ -173,8 +194,11 @@ describe('programmatic cache removal should not impact current state, but only c
   ].map(params => [
     [[{ key: CACHE_KEY }], ...params],
     [[CACHE_KEY], ...params],
-  ]).flat())('%p(...%p), update(...%p), %p', (opts, hook, i, u, e, matcher) => {
-    const { result } = renderHook(() => cached(...opts)(hook)(...i))
+  ]).flat().map(opts => [
+    [cached, ...opts],
+    [useCached, ...opts],
+  ]).flat())('%p(...%p), update(...%p), %p', (hof, opts, hook, i, u, e, matcher) => {
+    const { result } = renderHook(() => hof(...opts)(hook)(...i))
     act(() => result.current[1](...u))
     expect(result.current[0])[matcher](e)
     expect(lscache.get(CACHE_KEY))[matcher](e)
