@@ -1,5 +1,7 @@
 # use-cached
 
+[![Node.js Lint, Test and Build](https://github.com/woozyking/use-cached/workflows/Node.js%20Lint,%20Test%20and%20Build/badge.svg)](https://github.com/woozyking/use-cached/actions?query=workflow%3A%22Node.js+Lint%2C+Test+and+Build%22)
+[![Deploy Storybook to GitHub Pages](https://github.com/woozyking/use-cached/workflows/Deploy%20Storybook%20to%20GitHub%20Pages/badge.svg)]((https://woozyking.github.io/use-cached))
 [![npm version](https://badge.fury.io/js/use-cached.svg)](https://www.npmjs.com/package/use-cached)
 
 Higher-order-function that bakes state caching mechanism into supported React hooks.
@@ -22,7 +24,7 @@ import { cached } from 'use-cached'
 import cached from 'use-cached'
 ```
 
-The only interface (the higher-order-function) is exported as the module's named function (`{ cached }`), and its `default`. Check out the [Storybook](https://woozyking.github.io/use-cached), or examples below.
+The only interface (the higher-order-function) is exported as the module's named function (`{ cached }`), and its `default`.
 
 ### Cached `useState`
 

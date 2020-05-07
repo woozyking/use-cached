@@ -13,7 +13,8 @@
   "source": "src/index.js",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "lint": "eslint src __tests__ stories",
