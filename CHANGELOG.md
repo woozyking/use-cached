@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.1] - 2020-05-06
+## [1.2.1] - 2020-05-07
+### Fixed
+- More reliable check against `useState` and `useReducer`, eliminates false error of unsupported hooks when working with obfuscated React library, a very common case when vendorizing using bundlers such as webpack.
+
 ### Security
 - Upgrade all devDependencies, with lint and test fixes.
 

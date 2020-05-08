@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useReducer } from 'react'
 import lscache from 'lscache'
 
-const SUPPORTED_HOOKS = ['useState', 'useReducer']
+const SUPPORTED_HOOKS = [useState, useReducer]
 
 /**
  * Higher order function that configures and returns a modified version of
@@ -32,24 +32,32 @@ export function cached(...params) {
   if (ttl !== null && (isNaN(parseFloat(ttl)) || ttl < 0)) {
     throw new Error('ttl can only be null or a positive number.')
   }
-  return (hook) => (...args) => {
-    // hook support check
-    if (!hook || typeof hook !== 'function' || !SUPPORTED_HOOKS.includes(hook.name)) {
-      throw new Error(`only ${SUPPORTED_HOOKS.join(' | ')} can be cached.`)
+  return function(hook) {
+    // hook support check. TODO: function.name check breaks with obfuscations
+    if (typeof hook !== 'function' || !SUPPORTED_HOOKS.includes(hook)) {
+      throw new Error('Only useState and useReducer can be cached')
     }
-    // pull cached state
-    const cachedState = lscache.get(key)
-    // invoke hook depending on cached state availability
-    const [state, method] = cachedState === null ? hook(...args) : hook(...{
-      useState: [cachedState],
-      useReducer: [args[0], cachedState],
-    }[hook.name])
-    // internal effect to update cache
-    useEffect(() => {
-      lscache.set(key, state, ttl)
-    }, [state, key, ttl])
-    // return [state, method()[, remove()]]
-    return [state, method, () => lscache.remove(key)]
+    return function(...args) {
+      // pull cached state
+      const cachedState = lscache.get(key)
+      // invoke hook depending on cached state availability
+      let state, method
+      if (cachedState === null) {
+        [state, method] = hook(...args)
+      } else {
+        if (hook === useState) {
+          [state, method] = hook(cachedState)
+        } else {
+          [state, method] = hook(args[0], cachedState)
+        }
+      }
+      // internal effect to update cache
+      useEffect(() => {
+        lscache.set(key, state, ttl)
+      }, [state, key, ttl])
+      // return [state, method()[, remove()]]
+      return [state, method, () => lscache.remove(key)]
+    }
   }
 }
 
