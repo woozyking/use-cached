@@ -88,7 +88,7 @@ storiesOf('cached', module)
   .add('No key, no cache', () => {
     const StateCounter = () => {
       const init = () => Math.floor(Math.random() * 10)
-      // count here would be from cache if it exists as a non-null value
+      // count here would be not be cached and remove is a no-op function
       const [count, setCount, remove] = cached()(useState)(init())
       return (
         <>
