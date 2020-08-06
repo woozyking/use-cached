@@ -30,7 +30,7 @@ function reducer(state, action) {
 }
 
 describe('argument validations', () => {
-  const keys = ['', null, undefined, 123, () => {}, true, Symbol(CACHE_KEY)]
+  const keys = ['', 123, () => {}, true, Symbol(CACHE_KEY)]
   test.each(
     keys.map(key => [
       [{ key }],
@@ -67,6 +67,25 @@ describe('argument validations', () => {
     ]).flat(),
   )('fn: %p', (hof, fn, opts) => {
     expect(() => { hof(...opts)(fn)() }).toThrow()
+  })
+})
+
+describe('null or undefined key should return unmodded [state, method, noop]', () => {
+  const noKeys = [null, undefined]
+  const value = Math.random()
+  test.each(
+    noKeys.map(key => [
+      [{ key }],
+      [key],
+    ]).flat().map(opts => [
+      [cached, opts],
+      [useCached, opts],
+    ]).flat(),
+  )('%p(%p)', (hof, opts) => {
+    const { result } = renderHook(() => hof(...opts)(useState)(value))
+    expect(result.current[0]).toBe(value)
+    expect(typeof result.current[1]).toBe('function')
+    expect(typeof result.current[2]).toBe('function')
   })
 })
 

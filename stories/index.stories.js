@@ -85,3 +85,20 @@ storiesOf('cached', module)
     }
     return (<StateCounter />)
   })
+  .add('No key, no cache', () => {
+    const StateCounter = () => {
+      const init = () => Math.floor(Math.random() * 10)
+      // count here would be from cache if it exists as a non-null value
+      const [count, setCount, remove] = cached()(useState)(init())
+      return (
+        <>
+          Count: {count}
+          <button onClick={() => setCount(init())}>Randomize</button>
+          <button onClick={() => setCount(prevCount => prevCount + 1)}>+</button>
+          <button onClick={() => setCount(prevCount => prevCount - 1)}>-</button>
+          <button onClick={() => remove()}>Cache Removal (no-op without key)</button>
+        </>
+      )
+    }
+    return (<StateCounter />)
+  })

@@ -18,9 +18,12 @@ const SUPPORTED_HOOKS = [useState, useReducer]
 export function cached(...params) {
   let key, ttl, ttlMS
   if (typeof params[0] === 'object' && params[0] !== null) {
-    ({ key, ttl = null, ttlMS = null } = params[0])
+    ({ key = null, ttl = null, ttlMS = null } = params[0])
   } else { // DEPRECATING in v2.0
-    [key, ttl = null, ttlMS = null] = params
+    [key = null, ttl = null, ttlMS = null] = params
+  }
+  if (key === null) { // return unmodded hook when no key, with 3rd as no-op stub remove()
+    return (hook) => (...args) => [...hook(...args), () => {}]
   }
   if (!isNaN(parseInt(ttlMS)) && ttlMS > 0) {
     lscache.setExpiryMilliseconds(ttlMS)

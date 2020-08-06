@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2020-08-05
+### Changed
+- [*Breaking*] `cached()` with null/undefined `key` returns unmodded hook, which would return a no-op function in place of the third `remove` function.
+
 ## [1.2.1] - 2020-05-07
 ### Fixed
 - More reliable check against `useState` and `useReducer`, eliminates false error of unsupported hooks when working with obfuscated React library, a very common case when vendorizing using bundlers such as webpack.
