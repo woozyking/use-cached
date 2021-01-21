@@ -1,0 +1,137 @@
+name: Node.js Lint, Test and Build
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['12.x', '14.x']
+
+    name: lint with Node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Cache Node Modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.OS }}-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+
+      - run: npm i
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['12.x', '14.x']
+
+    name: test with Node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Cache Node Modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.OS }}-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+
+      - run: npm i
+      - run: npm test -- --coverage
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['12.x', '14.x']
+
+    name: build with Node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Cache Node Modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.OS }}-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+
+      - run: npm i
+      - run: npm run build
+
+  depcheck:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['12.x', '14.x']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set Node.js version
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - run: npx depcheck
+
+  size-limit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['12.x', '14.x']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set Node.js version
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - run: npx size-limit
+
+  deploy-storybook:
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+    if: contains(github.event_name, 'push')
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+
+      - name: Cache Node Modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.OS }}-${{ hashFiles('**/package-lock.json') }}
+
+      - run: npm i
+      - run: npm run deploy-storybook -- --ci
+        env:
+          GH_TOKEN: ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}

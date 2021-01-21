@@ -1,0 +1,6 @@
+ignore-dirs: ["dist", "node_modules", "storybook-static"]
+ignores: [
+    "@size-limit/preset-small-lib",
+    "@storybook/addons",
+    "size-limit",
+]
