@@ -13,21 +13,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ['12.x', '14.x']
+        node-version: ['12.x', '14.x']
 
-    name: lint with Node ${{ matrix.node }}
+    name: lint with Node ${{ matrix.node-version }}
     steps:
       - uses: actions/checkout@v2
 
       - uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.node-version }}
 
       - name: Cache Node Modules
         uses: actions/cache@v2
         with:
           path: node_modules
-          key: ${{ runner.OS }}-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.OS }}-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
 
       - run: npm i
       - run: npm run lint
@@ -36,21 +36,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ['12.x', '14.x']
+        node-version: ['12.x', '14.x']
 
-    name: test with Node ${{ matrix.node }}
+    name: test with Node ${{ matrix.node-version }}
     steps:
       - uses: actions/checkout@v2
 
       - uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.node-version }}
 
       - name: Cache Node Modules
         uses: actions/cache@v2
         with:
           path: node_modules
-          key: ${{ runner.OS }}-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.OS }}-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
 
       - run: npm i
       - run: npm test -- --coverage
@@ -59,21 +59,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ['12.x', '14.x']
+        node-version: ['12.x', '14.x']
 
-    name: build with Node ${{ matrix.node }}
+    name: build with Node ${{ matrix.node-version }}
     steps:
       - uses: actions/checkout@v2
 
       - uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.node-version }}
 
       - name: Cache Node Modules
         uses: actions/cache@v2
         with:
           path: node_modules
-          key: ${{ runner.OS }}-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.OS }}-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
 
       - run: npm i
       - run: npm run build
@@ -85,11 +85,9 @@ jobs:
         node-version: ['12.x', '14.x']
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      - name: Set Node.js version
-        uses: actions/setup-node@v2
+      - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -102,14 +100,19 @@ jobs:
         node-version: ['12.x', '14.x']
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      - name: Set Node.js version
-        uses: actions/setup-node@v2
+      - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Cache Node Modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.OS }}-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+
+      - run: npm i
       - run: npx size-limit
 
   deploy-storybook:
@@ -118,8 +121,7 @@ jobs:
     if: contains(github.event_name, 'push')
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
       - uses: actions/setup-node@v2
         with:

@@ -1,6 +1,18 @@
 ignore-dirs: ["dist", "node_modules", "storybook-static"]
 ignores: [
-    "@size-limit/preset-small-lib",
+    "@babel/cli",
+    "@babel/core",
+    "@storybook/storybook-deployer",
     "@storybook/addons",
+    "babel-loader",
+    "eslint",
+    "eslint-plugin-import",
+    "eslint-plugin-node",
+    "eslint-plugin-promise",
+    "eslint-plugin-standard",
+    "jest",
+    "react-dom",
+    "react-test-renderer",
+    "@size-limit/preset-small-lib",
     "size-limit",
 ]
