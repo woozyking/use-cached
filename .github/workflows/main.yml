@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [14, 16, 18]
+        node-version: [14, 16]
 
     steps:
       - uses: actions/checkout@v3
@@ -93,6 +93,24 @@ jobs:
       - run: npm i
       - run: npm run build
       - run: npx size-limit
+
+  size-limit-node-18: # TODO: move this back to matrix testing once size-limit/webpack hash error is resolved)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - run: npm i
+      - run: npm run build
+      - run: npx size-limit
+        env:
+          # bypass webpack/size-limit error (digital envelope routines::unsupported) in node 18
+          NODE_OPTIONS: '--openssl-legacy-provider'
 
   deploy-storybook:
     runs-on: ubuntu-latest
