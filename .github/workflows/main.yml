@@ -2,8 +2,6 @@ name: Node.js Lint, Test and Build
 
 on:
   pull_request:
-    branches:
-      - main
   push:
     branches:
       - main
@@ -13,21 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ['12.x', '14.x']
+        node-version: [14, 16, 18]
 
     name: lint with Node ${{ matrix.node-version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Cache Node Modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.OS }}-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+          cache: 'npm'
 
       - run: npm i
       - run: npm run lint
@@ -36,21 +29,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ['12.x', '14.x']
+        node-version: [14, 16, 18]
 
     name: test with Node ${{ matrix.node-version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Cache Node Modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.OS }}-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+          cache: 'npm'
 
       - run: npm i
       - run: npm test -- --coverage
@@ -59,21 +47,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ['12.x', '14.x']
+        node-version: [14, 16, 18]
 
     name: build with Node ${{ matrix.node-version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Cache Node Modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.OS }}-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+          cache: 'npm'
 
       - run: npm i
       - run: npm run build
@@ -82,12 +65,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ['12.x', '14.x']
+        node-version: [14, 16, 18]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -97,24 +80,37 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ['12.x', '14.x']
+        node-version: [14, 16]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Cache Node Modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.OS }}-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+          cache: 'npm'
 
       - run: npm i
       - run: npm run build
       - run: npx size-limit
+
+  size-limit-node-18: # TODO: move this back to matrix testing once size-limit/webpack hash error is resolved)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - run: npm i
+      - run: npm run build
+      - run: npx size-limit
+        env:
+          # bypass webpack/size-limit error (digital envelope routines::unsupported) in node 18
+          NODE_OPTIONS: '--openssl-legacy-provider'
 
   deploy-storybook:
     runs-on: ubuntu-latest
@@ -122,17 +118,12 @@ jobs:
     if: contains(github.event_name, 'push')
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
-          node-version: '14.x'
-
-      - name: Cache Node Modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.OS }}-${{ hashFiles('**/package-lock.json') }}
+          node-version: '16.x'
+          cache: 'npm'
 
       - run: npm i
       - run: npm run deploy-storybook -- --ci
