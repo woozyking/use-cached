@@ -1,104 +1,112 @@
 # use-cached
 
-[![Node.js Lint, Test and Build](https://github.com/woozyking/use-cached/workflows/Node.js%20Lint,%20Test%20and%20Build/badge.svg)](https://github.com/woozyking/use-cached/actions?query=workflow%3A%22Node.js+Lint%2C+Test+and+Build%22)
-[![Deploy Storybook to GitHub Pages](https://github.com/woozyking/use-cached/workflows/Deploy%20Storybook%20to%20GitHub%20Pages/badge.svg)](https://woozyking.github.io/use-cached)
 [![npm version](https://badge.fury.io/js/use-cached.svg)](https://www.npmjs.com/package/use-cached)
 
-Higher-order-function that bakes state caching mechanism into supported React hooks.
+A zero-dependency, highly performant higher-order function that bakes `localStorage` caching and optional TTL (Time To Live) expiration into standard React hooks (`useState` and `useReducer`).
 
-Built on top of [lscache](https://github.com/pamelafox/lscache) to provide seamless caching integration with TTL/expiration support.
+## Features
+
+- **Zero Dependencies:** Fully natively manages `localStorage`. No external caching libraries required.
+- **High Performance:** Uses React's lazy initialization to ensure `localStorage` (a synchronous, blocking API) is only read exactly once during component mount, preventing render bottlenecks.
+- **TTL Expiration:** Easily set cache expiration times so your state doesn't get stale permanently.
+- **Cache Invalidation:** The wrapped hooks return a 3rd tuple element—a dedicated removal function to easily wipe the cache for that specific key.
 
 ## Install
 
 ```shell
-yarn add use-cached
-# OR
 npm install use-cached
 ```
 
-## Usage
+Or the equivalent of your choice of package manager.
 
-```js
-import { cached } from 'use-cached'
-// or import its default, which is the same function
-import cached from 'use-cached'
-```
+## API Configuration
 
-The only interface (the higher-order-function) is exported as the module's named function (`{ cached }`), and its `default`.
+The `cached` function accepts a configuration object to define how the state is stored:
 
-### Cached `useState`
+* **`key`** *(string, required)*: The unique `localStorage` key used to save the data.
+* **`ttl`** *(number, optional)*: Time To Live multiplier. How long the cache is valid. If not provided, the cache will never expire.
+* **`ttlMS`** *(number, optional)*: The base unit in milliseconds for the `ttl`. Default is `60000` (1 minute).
+
+*Example: `ttl: 5` and `ttlMS: 1000` means the cache expires in 5000 milliseconds (5 seconds).*
+
+## Usage Examples
+
+### 1. Basic `useState`
+
+When wrapping `useState`, the hook returns `[state, setState, removeCache]`.
 
 ```jsx
-import React from 'react'
-import { cached } from 'use-cached'
+import { useState } from "react";
+import { cached } from "use-cached";
 
-// get cached version of useState
-const useState = cached({
-  // Object config, added in v1.2.0
-  key: 'TEST_CACHE_KEY',
-  ttl: 60,
-  ttlMS: 60000, // added in v1.2.0
-  // effective TTL in this case is 60 * 60000ms = 60 minutes
-})(React.useState)
+const useCachedState = cached({ key: "app_user_name" })(useState);
 
-function Counter({initialCount}) {
-  // count here would be from cache if it exists as a non-null value
-  const [count, setCount] = useState(initialCount)
+function BasicStateDemo() {
+  const [name, setName, removeCache] = useCachedState("Guest");
+
   return (
     <>
-      Count: {count}
-      <button onClick={() => setCount(initialCount)}>Reset</button>
-      <button onClick={() => setCount(prevCount => prevCount + 1)}>+</button>
-      <button onClick={() => setCount(prevCount => prevCount - 1)}>-</button>
+      <input value={name} onChange={(e) => setName(e.target.value)} />
+      <button onClick={removeCache}>Clear Cache</button>
     </>
-  )
+  );
 }
 ```
 
-### Cached `useReducer`
+### 2. `useState` with TTL Expiration
 
 ```jsx
-import React from 'react'
-import cached from 'use-cached' // same as import { cached }
+import { useState } from "react";
+import { cached } from "use-cached";
 
-// get cached version of useReducer
-const useReducer = cached(
-  // positional config, deprecating in v2.0
-  'TEST_CACHE_KEY', // key
-  60, // ttl
-  60000, // ttlMS
-)(React.useReducer)
+// Expires in 5 seconds (ttl: 5, ttlMS: 1000ms)
+const useExpiringState = cached({
+  key: "app_temp_count",
+  ttl: 5,
+  ttlMS: 1000,
+})(useState);
 
-function init(initialCount) {
-  return {count: initialCount}
+function ExpiringCounter() {
+  const [count, setCount] = useExpiringState(0);
+
+  return (
+    <button onClick={() => setCount((c) => c + 1)}>
+      Increment: {count}
+    </button>
+  );
 }
+```
 
-function reducer(state, action) {
+### 3. Cached `useReducer`
+
+When wrapping `useReducer`, the hook returns `[state, dispatch, removeCache]`.
+
+```jsx
+import { useReducer } from "react";
+import { cached } from "use-cached";
+
+const useCachedReducer = cached({ key: "app_counter_reducer" })(useReducer);
+
+const counterReducer = (state, action) => {
   switch (action.type) {
-    case 'increment':
-      return {count: state.count + 1}
-    case 'decrement':
-      return {count: state.count - 1}
-    case 'reset':
-      return init(action.payload)
-    default:
-      throw new Error()
+    case 'INCREMENT': return { count: state.count + 1 };
+    case 'DECREMENT': return { count: state.count - 1 };
+    case 'RESET': return { count: 0 };
+    default: return state;
   }
-}
+};
 
-function Counter({initialCount}) {
-  // state here would be from cache if it exists as a non-null value
-  const [state, dispatch] = useReducer(reducer, initialCount, init)
+function ReducerDemo() {
+  const [state, dispatch, removeCache] = useCachedReducer(counterReducer, { count: 0 });
+
   return (
     <>
-      Count: {state.count}
-      <button
-        onClick={() => dispatch({type: 'reset', payload: initialCount})}>
-        Reset
-      </button>
-      <button onClick={() => dispatch({type: 'increment'})}>+</button>
-      <button onClick={() => dispatch({type: 'decrement'})}>-</button>
+      <p>Count: {state.count}</p>
+      <button onClick={() => dispatch({ type: 'INCREMENT' })}>+</button>
+      <button onClick={() => dispatch({ type: 'DECREMENT' })}>-</button>
+      <button onClick={() => dispatch({ type: 'RESET' })}>Reset</button>
+      <button onClick={removeCache}>Clear Cache</button>
     </>
-  )
+  );
 }
 ```

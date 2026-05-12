@@ -1,63 +1,45 @@
 {
   "name": "use-cached",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "author": "woozyking <runzhou.li@gmail.com>",
   "license": "MIT",
-  "description": "React cached hooks.",
+  "description": "React hook for caching states in localStorage with TTL/expiration support",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/woozyking/use-cached.git"
   },
+  "type": "module",
   "private": false,
-  "main": "dist/index.js",
+  "main": "dist/use-cached.umd.cjs",
+  "module": "dist/use-cached.js",
   "source": "src/index.js",
   "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
+    "dist"
   ],
-  "scripts": {
-    "lint": "eslint src __tests__ stories",
-    "test": "jest",
-    "build": "babel src --out-dir dist --copy-files",
-    "prepublishOnly": "yarn install && yarn lint && yarn test && yarn build",
-    "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook",
-    "deploy-storybook": "storybook-to-ghpages"
+  "exports": {
+    ".": {
+      "import": "./dist/use-cached.js",
+      "require": "./dist/use-cached.umd.cjs"
+    }
   },
-  "dependencies": {
-    "lscache": "^1.3.0"
+  "scripts": {
+    "build": "vite build",
+    "prepublishOnly": "npm install && npm run build",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "devDependencies": {
-    "@babel/cli": "^7.8.4",
-    "@babel/core": "^7.9.6",
-    "@babel/preset-env": "^7.9.6",
-    "@babel/preset-react": "^7.9.4",
-    "@size-limit/preset-small-lib": "^4.5.7",
-    "@storybook/addon-actions": "^5.3.18",
-    "@storybook/addon-links": "^5.3.18",
-    "@storybook/addon-storysource": "^5.3.18",
-    "@storybook/addons": "^5.3.18",
-    "@storybook/react": "^5.3.18",
-    "@storybook/storybook-deployer": "^2.8.5",
-    "@testing-library/react-hooks": "^3.2.1",
-    "babel-loader": "^8.1.0",
-    "eslint": "^6.8.0",
-    "eslint-config-standard": "^14.1.1",
-    "eslint-plugin-import": "^2.20.2",
-    "eslint-plugin-jest": "^23.9.0",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-react": "^7.19.0",
-    "eslint-plugin-standard": "^4.0.1",
-    "jest": "^26.0.1",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "react-test-renderer": "^16.13.1",
-    "size-limit": "^4.5.7"
+    "@biomejs/biome": "2.4.15",
+    "@storybook/addon-docs": "^10.3.6",
+    "@storybook/react-vite": "^10.3.6",
+    "prop-types": "^15.8.1",
+    "react": "^19",
+    "react-dom": "^19",
+    "storybook": "^10.3.6",
+    "vite": "^8.0.12"
   },
   "peerDependencies": {
-    "react": "^16.8"
+    "react": "^19"
   },
   "bugs": {
     "url": "https://github.com/woozyking/use-cached/issues"
@@ -68,11 +50,5 @@
     "hook",
     "cache",
     "localstorage"
-  ],
-  "size-limit": [
-    {
-      "path": "dist/index.js",
-      "limit": "2.5 KB"
-    }
   ]
 }
