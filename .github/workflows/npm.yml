@@ -3,27 +3,45 @@ name: Node.js Package
 on:
   push:
     tags:
-      - 'v*' # proceeds eg: v1.0
-      - '!v*-*' # skips eg: v1.2.99-beta1, v3.5.0-test, etc.
+      - 'v*' # Triggers on ALL tags starting with 'v' (e.g., v1.0.0, v1.2.0-alpha.1)
+
+permissions:
+  id-token: write  # Required for OIDC / NPM Trusted Publishers
+  contents: read
 
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    name: Publish to npm
+    environment: npm publish
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v6
         with:
-          node-version: '14.x'
-          registry-url: https://registry.npmjs.org/
+          node-version-file: ".nvmrc"
+          package-manager-cache: false
+          registry-url: 'https://registry.npmjs.org'
 
-      - name: Cache Node Modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.OS }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm ci
 
-      - run: npm i
-      - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_PUBLISH }}
+      - run: npm run build
+
+      - name: Determine npm dist-tag
+        id: get-tag
+        run: |
+          VERSION=${{ github.ref_name }}
+          if [[ "$VERSION" == *"-"* ]]; then
+            # Extract everything after the first dash (e.g., 'beta.1' from 'v1.2.0-beta.1')
+            SUFFIX="${VERSION#*-}"
+            # Extract just the word before any dots (e.g., 'beta' from 'beta.1')
+            DIST_TAG="${SUFFIX%%.*}"
+            echo "Pre-release detected. Using npm dist-tag: $DIST_TAG"
+          else
+            DIST_TAG="latest"
+            echo "Stable release detected. Using npm dist-tag: latest"
+          fi
+          echo "tag=$DIST_TAG" >> $GITHUB_OUTPUT
+
+      - run: npm publish --access public --tag ${{ steps.get-tag.outputs.tag }} --provenance
