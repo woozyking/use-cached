@@ -10,8 +10,8 @@
   },
   "type": "module",
   "private": false,
-  "main": "dist/use-cached.umd.cjs",
-  "module": "dist/use-cached.js",
+  "main": "./dist/use-cached.umd.cjs",
+  "module": "./dist/use-cached.js",
   "source": "src/index.js",
   "files": [
     "dist"
@@ -24,7 +24,6 @@
   },
   "scripts": {
     "build": "vite build",
-    "prepublishOnly": "npm install && npm run build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
