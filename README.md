@@ -1,6 +1,6 @@
 # use-cached
 
-[![npm version](https://badge.fury.io/js/use-cached.svg)](https://www.npmjs.com/package/use-cached)
+[![NPM Version](https://img.shields.io/npm/v/use-cached)](https://www.npmjs.com/package/use-cached)
 
 A zero-dependency, highly performant higher-order function that bakes `localStorage` caching and optional TTL (Time To Live) expiration into standard React hooks (`useState` and `useReducer`).
 
