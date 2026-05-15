@@ -1,6 +1,6 @@
 {
   "name": "use-cached",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "author": "woozyking <runzhou.li@gmail.com>",
   "license": "MIT",
   "description": "React hook for caching states in localStorage with TTL/expiration support",

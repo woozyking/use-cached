@@ -1,117 +1,140 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
-const SUPPORTED_HOOKS = [useState, useReducer];
+const SUPPORTED_HOOKS = new Set([useState, useReducer]);
+const DEFAULT_UNIT_MS = 60_000; // compatible with lscache behaviour
+const isBrowser = typeof window !== "undefined" && !!window.localStorage; // SSR guardrail
+const isDev = process.env.NODE_ENV !== "production";
 
-const getCachedItem = (key) => {
-  try {
-    const itemStr = window.localStorage.getItem(key);
-    if (!itemStr) {
-      return null;
-    }
-
-    const item = JSON.parse(itemStr);
-    // TTL Check: Remove and return null if expired
-    if (item.expiry && Date.now() > item.expiry) {
-      window.localStorage.removeItem(key);
-      return null;
-    }
-    return item.value;
-  } catch (e) {
-    console.warn(`Error reading localStorage key "${key}":`, e);
-    return null;
+const warn = (msg, e) => {
+  if (isDev) {
+    console.warn(`[cached] ${msg}`, e);
   }
 };
 
-const setCachedItem = (key, value, ttl, ttlMS) => {
-  try {
-    // Replicating lscache behavior: ttlMS acts as the base unit multiplier.
-    // Default unit is typically 1 minute (60000ms).
-    const unit =
-      ttlMS && !Number.isNaN(parseInt(ttlMS, 10)) && ttlMS > 0 ? ttlMS : 60000;
-    const expiry = ttl !== null ? Date.now() + ttl * unit : null;
+const noop = () => {};
 
+const readCache = (key) => {
+  if (!isBrowser) {
+    return undefined;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (raw === null) {
+      return undefined;
+    }
+
+    const { value, expiry } = JSON.parse(raw);
+    if (expiry && Date.now() > expiry) {
+      window.localStorage.removeItem(key);
+      return undefined;
+    }
+    return { value }; // null/undefined values survive round-trip
+  } catch (e) {
+    warn(`read failed for "${key}"`, e);
+    return undefined;
+  }
+};
+
+const writeCache = (key, value, ttl, unit) => {
+  if (!isBrowser) {
+    return;
+  }
+
+  try {
+    const expiry = ttl != null ? Date.now() + ttl * unit : null;
     window.localStorage.setItem(key, JSON.stringify({ value, expiry }));
   } catch (e) {
-    console.warn("Failed to save to localStorage (might be full):", e);
+    warn(`write failed for "${key}" (storage full?)`, e);
   }
 };
 
-/**
- * Higher order function that configures and returns a modified version of
- * the given supported hook
- */
-export function cached(...params) {
-  let key, ttl, ttlMS;
-
-  if (typeof params[0] === "object" && params[0] !== null) {
-    ({ key = null, ttl = null, ttlMS = null } = params[0]);
-  } else {
-    [key = null, ttl = null, ttlMS = null] = params;
+const dropCache = (key) => {
+  if (!isBrowser) {
+    return;
   }
 
-  // Return unmodded hook when no key is provided
+  try {
+    window.localStorage.removeItem(key);
+  } catch (e) {
+    warn(`remove failed for "${key}"`, e);
+  }
+};
+
+export function cached(...params) {
+  const opts =
+    params[0] && typeof params[0] === "object"
+      ? params[0]
+      : { key: params[0], ttl: params[1], ttlMS: params[2] };
+  const { key = null, ttl = null, ttlMS = null } = opts;
+
+  // passthrough: cached() with no key returns the hook untouched + noop remove.
   if (key === null) {
     return (hook) =>
-      (...args) => [...hook(...args), () => {}];
+      (...args) => {
+        const [s, d] = hook(...args);
+        return [s, d, noop];
+      };
   }
 
-  // Argument validations
   if (typeof key !== "string" || key.trim() === "") {
-    throw new Error("key must be a non-empty string.");
+    throw new Error("`key` must be a non-empty string.");
   }
-  if (ttl !== null && (Number.isNaN(parseFloat(ttl)) || ttl < 0)) {
-    throw new Error("ttl can only be null or a positive number.");
+  if (
+    ttl !== null &&
+    (typeof ttl !== "number" || !Number.isFinite(ttl) || ttl < 0)
+  ) {
+    throw new Error("`ttl` must be null or a non-negative finite number.");
   }
+  if (
+    ttlMS !== null &&
+    (typeof ttlMS !== "number" || !Number.isFinite(ttlMS) || ttlMS <= 0)
+  ) {
+    throw new Error("`ttlMS` must be null or a positive finite number.");
+  }
+  const unit = ttlMS ?? DEFAULT_UNIT_MS;
 
   return (hook) => {
-    if (typeof hook !== "function" || !SUPPORTED_HOOKS.includes(hook)) {
-      throw new Error("Only useState and useReducer can be cached");
+    if (!SUPPORTED_HOOKS.has(hook)) {
+      throw new Error("`cached` only supports useState and useReducer.");
     }
+    const isStateHook = hook === useState;
 
     return (...args) => {
-      const isStateHook = hook === useState;
-
-      // LAZY INITIALIZATION: Ensure we only read from localStorage once on mount
-      const initFunction = isStateHook
+      const init = isStateHook
         ? () => {
-            const cachedValue = getCachedItem(key);
-            if (cachedValue !== null) {
-              return cachedValue;
+            const hit = readCache(key);
+            if (hit) {
+              return hit.value;
             }
-            // Handle standard useState lazy init fallback
             return typeof args[0] === "function" ? args[0]() : args[0];
           }
         : (initialArg) => {
-            const cachedValue = getCachedItem(key);
-            if (cachedValue !== null) return cachedValue;
-            // Handle standard useReducer lazy init fallback
+            const hit = readCache(key);
+            if (hit) {
+              return hit.value;
+            }
             return typeof args[2] === "function"
               ? args[2](initialArg)
               : initialArg;
           };
 
-      // Invoke hook with the appropriate lazy initializers
-      const hookArgs = isStateHook
-        ? [initFunction]
-        : [args[0], args[1], initFunction];
+      const [state, dispatch] = hook(
+        ...(isStateHook ? [init] : [args[0], args[1], init]),
+      );
 
-      const [state, method] = hook(...hookArgs);
-
-      // Internal effect to update cache when state changes
+      // skip the no-op initial write; the first useful write is the first state change.
+      const firstRun = useRef(true);
       useEffect(() => {
-        setCachedItem(key, state, ttl, ttlMS);
+        if (firstRun.current) {
+          firstRun.current = false;
+          return;
+        }
+        writeCache(key, state, ttl, unit);
       }, [state]);
 
-      // Memoize the removal function to maintain referential equality
-      const removeCache = useCallback(() => {
-        try {
-          window.localStorage.removeItem(key);
-        } catch (e) {
-          console.warn(`Failed to remove key "${key}" from localStorage:`, e);
-        }
-      }, []);
-
-      return [state, method, removeCache];
+      const remove = useCallback(() => dropCache(key), []);
+      return [state, dispatch, remove];
     };
   };
 }
